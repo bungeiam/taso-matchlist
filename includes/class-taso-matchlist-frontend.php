@@ -1,6 +1,6 @@
 <?php
 /**
- * Frontend shortcode rendering.
+ * Frontend rendering for Taso Matchlist.
  *
  * @package Taso_Matchlist
  */
@@ -10,28 +10,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! class_exists( 'Taso_Matchlist_Frontend' ) ) {
-
 	/**
-	 * Handles frontend shortcode and rendering.
+	 * Frontend renderer.
 	 */
 	class Taso_Matchlist_Frontend {
 
 		/**
-		 * Shortcode tag.
-		 *
-		 * @var string
+		 * Shortcode name.
 		 */
 		const SHORTCODE = 'taso_matchlist';
 
 		/**
-		 * Frontend style handle.
-		 *
-		 * @var string
+		 * Style handle.
 		 */
 		const STYLE_HANDLE = 'taso-matchlist';
 
 		/**
-		 * Match service instance.
+		 * Matches service.
 		 *
 		 * @var Taso_Matchlist_Matches
 		 */
@@ -40,7 +35,7 @@ if ( ! class_exists( 'Taso_Matchlist_Frontend' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param Taso_Matchlist_Matches $matches Match service.
+		 * @param Taso_Matchlist_Matches $matches Matches service.
 		 */
 		public function __construct( $matches ) {
 			$this->matches = $matches;
