@@ -38,6 +38,13 @@ if ( ! class_exists( 'Taso_Matchlist' ) ) {
 		private $api = null;
 
 		/**
+		 * Matches instance.
+		 *
+		 * @var Taso_Matchlist_Matches|null
+		 */
+		private $matches = null;
+
+		/**
 		 * Returns singleton instance.
 		 *
 		 * @return Taso_Matchlist
@@ -80,6 +87,7 @@ if ( ! class_exists( 'Taso_Matchlist' ) ) {
 		 */
 		private function includes() {
 			require_once TASO_MATCHLIST_PLUGIN_DIR . 'includes/class-taso-matchlist-api.php';
+			require_once TASO_MATCHLIST_PLUGIN_DIR . 'includes/class-taso-matchlist-matches.php';
 			require_once TASO_MATCHLIST_PLUGIN_DIR . 'includes/class-taso-matchlist-settings.php';
 		}
 
@@ -122,10 +130,11 @@ if ( ! class_exists( 'Taso_Matchlist' ) ) {
 		 * @return void
 		 */
 		private function init_components() {
-			$this->api = new Taso_Matchlist_API();
+			$this->api     = new Taso_Matchlist_API();
+			$this->matches = new Taso_Matchlist_Matches( $this->api );
 
 			if ( is_admin() ) {
-				$this->settings = new Taso_Matchlist_Settings( $this->api );
+				$this->settings = new Taso_Matchlist_Settings( $this->api, $this->matches );
 			}
 		}
 

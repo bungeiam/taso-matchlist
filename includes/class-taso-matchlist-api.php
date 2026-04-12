@@ -54,18 +54,19 @@ if ( ! class_exists( 'Taso_Matchlist_API' ) ) {
 				);
 			}
 
-			$today     = current_time( 'Y-m-d' );
-			$end_date  = gmdate( 'Y-m-d', strtotime( $today . ' +' . absint( $days_ahead ) . ' days' ) );
+			$today_timestamp = current_time( 'timestamp' );
+			$today           = wp_date( 'Y-m-d', $today_timestamp );
+			$end_timestamp   = $today_timestamp + ( absint( $days_ahead ) * DAY_IN_SECONDS );
+			$end_date        = wp_date( 'Y-m-d', $end_timestamp );
 
 			$params = array(
-				'api_key'    => $api_key,
-				'club_id'    => $club_id,
-				'start_date' => $today,
-				'end_date'   => $end_date,
-				'details'    => 1,
-				'per_page'   => 1,
-				'page'       => 1,
-				'page_size'  => 200,
+				'api_key'     => $api_key,
+				'club_id'     => $club_id,
+				'home_away'   => 'home',
+				'start_date'  => $today,
+				'end_date'    => $end_date,
+				'page_size'   => 200,
+				'page_number' => 1,
 			);
 
 			$response = $this->request( 'getMatches', $params );
@@ -89,19 +90,35 @@ if ( ! class_exists( 'Taso_Matchlist_API' ) ) {
 				return $result;
 			}
 
-			$matches = array();
-
-			if ( isset( $result['matches'] ) && is_array( $result['matches'] ) ) {
-				$matches = $result['matches'];
-			} elseif ( is_array( $result ) ) {
-				$matches = $result;
-			}
+			$matches = $this->extract_matches_from_response( $result );
 
 			return array(
 				'ok'           => true,
 				'match_count'  => count( $matches ),
 				'raw_response' => $result,
 			);
+		}
+
+		/**
+		 * Extract match rows from API response.
+		 *
+		 * @param array $response API response.
+		 * @return array
+		 */
+		public function extract_matches_from_response( $response ) {
+			if ( isset( $response['matches'] ) && is_array( $response['matches'] ) ) {
+				return $response['matches'];
+			}
+
+			if ( isset( $response['data'] ) && is_array( $response['data'] ) ) {
+				return $response['data'];
+			}
+
+			if ( isset( $response[0] ) && is_array( $response ) ) {
+				return $response;
+			}
+
+			return array();
 		}
 
 		/**
@@ -221,6 +238,21 @@ if ( ! class_exists( 'Taso_Matchlist_API' ) ) {
 
 			if ( $value < 1 ) {
 				$value = 90;
+			}
+
+			return $value;
+		}
+
+		/**
+		 * Get stored cache minutes.
+		 *
+		 * @return int
+		 */
+		public function get_cache_minutes() {
+			$value = absint( get_option( 'taso_matchlist_cache_minutes', 30 ) );
+
+			if ( $value < 1 ) {
+				$value = 30;
 			}
 
 			return $value;
