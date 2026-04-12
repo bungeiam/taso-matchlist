@@ -1,6 +1,6 @@
 <?php
 /**
- * Match normalization and grouping.
+ * Match normalization and grouping service.
  *
  * @package Taso_Matchlist
  */
@@ -10,21 +10,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
-
 	/**
-	 * Handles fetching, normalizing and grouping match data.
+	 * Match service.
 	 */
 	class Taso_Matchlist_Matches {
 
 		/**
-		 * Base cache key prefix.
-		 *
-		 * @var string
+		 * Cache key prefix.
 		 */
 		const CACHE_KEY = 'taso_matchlist_matches';
 
 		/**
-		 * API service instance.
+		 * API service.
 		 *
 		 * @var Taso_Matchlist_API
 		 */
@@ -33,7 +30,7 @@ if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param Taso_Matchlist_API $api API instance.
+		 * @param Taso_Matchlist_API $api API service.
 		 */
 		public function __construct( $api ) {
 			$this->api = $api;
@@ -50,7 +47,6 @@ if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 
 			if ( ! $force_refresh ) {
 				$cached = get_transient( $cache_key );
-
 				if ( false !== $cached && is_array( $cached ) ) {
 					return $cached;
 				}
@@ -73,57 +69,6 @@ if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 			);
 
 			return $grouped;
-		}
-
-		/**
-		 * Build debug summary from raw and normalized data.
-		 *
-		 * @param int $limit Row limit.
-		 * @return array|\WP_Error
-		 */
-		public function get_debug_summary( $limit = 5 ) {
-			$response = $this->api->get_matches();
-
-			if ( is_wp_error( $response ) ) {
-				return $response;
-			}
-
-			$rows            = $this->api->extract_matches_from_response( $response );
-			$configured_id   = $this->api->get_club_id();
-			$debug_rows      = array();
-			$rows_to_inspect = array_slice( $rows, 0, max( 1, absint( $limit ) ) );
-
-			foreach ( $rows_to_inspect as $row ) {
-				if ( ! is_array( $row ) ) {
-					continue;
-				}
-
-				$club_a_id   = $this->normalize_id_value( $this->extract_first_non_empty( $row, array( 'club_A_id', 'home_club_id' ) ) );
-				$club_b_id   = $this->normalize_id_value( $this->extract_first_non_empty( $row, array( 'club_B_id', 'away_club_id' ) ) );
-				$team_a_name = $this->normalize_scalar( $this->extract_first_non_empty( $row, array( 'team_A_name', 'home_team_name' ) ) );
-				$team_b_name = $this->normalize_scalar( $this->extract_first_non_empty( $row, array( 'team_B_name', 'away_team_name' ) ) );
-				$date        = $this->normalize_scalar( $this->extract_first_non_empty( $row, array( 'date', 'match_date' ) ) );
-				$time        = $this->normalize_scalar( $this->extract_first_non_empty( $row, array( 'time', 'match_time' ) ) );
-
-				$debug_rows[] = array(
-					'match_id'                  => $this->normalize_scalar( $this->extract_first_non_empty( $row, array( 'match_id', 'id' ) ) ),
-					'date'                      => $date,
-					'time'                      => $time,
-					'team_A_name'               => $team_a_name,
-					'club_A_id'                 => $club_a_id,
-					'team_B_name'               => $team_b_name,
-					'club_B_id'                 => $club_b_id,
-					'configured_club_id'        => $configured_id,
-					'configured_matches_club_A' => ( '' !== $configured_id && $configured_id === $club_a_id ),
-					'configured_matches_club_B' => ( '' !== $configured_id && $configured_id === $club_b_id ),
-				);
-			}
-
-			return array(
-				'configured_club_id' => $configured_id,
-				'raw_match_count'    => count( $rows ),
-				'preview_rows'       => $debug_rows,
-			);
 		}
 
 		/**
@@ -267,12 +212,18 @@ if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 				$row,
 				array(
 					'competition_name',
+					'name',
+				)
+			);
+
+			$category_name = $this->extract_first_non_empty(
+				$row,
+				array(
 					'category_name',
-					'group_name',
 					'series_name',
 					'series',
 					'category',
-					'name',
+					'group_name',
 				)
 			);
 
@@ -306,15 +257,41 @@ if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 				)
 			);
 
+			$home_logo_url = $this->extract_first_non_empty(
+				$row,
+				array(
+					'club_A_crest',
+					'home_logo_url',
+					'home_team_logo',
+					'home_team_logo_url',
+					'home_logo',
+					'home_team_crest',
+				)
+			);
+
+			$away_logo_url = $this->extract_first_non_empty(
+				$row,
+				array(
+					'club_B_crest',
+					'away_logo_url',
+					'away_team_logo',
+					'away_team_logo_url',
+					'away_logo',
+					'away_team_crest',
+				)
+			);
+
 			$datetime_info = $this->extract_datetime_data( $row );
 
-			$home_club_id  = $this->normalize_id_value( $home_club_id );
-			$away_club_id  = $this->normalize_id_value( $away_club_id );
+			$home_club_id = $this->normalize_id_value( $home_club_id );
+			$away_club_id = $this->normalize_id_value( $away_club_id );
+
 			$is_home_match = ( '' !== $configured_club_id && '' !== $home_club_id && $configured_club_id === $home_club_id );
 
 			return array(
 				'match_id'         => $this->normalize_scalar( $match_id ),
 				'competition_name' => $this->normalize_scalar( $competition_name ),
+				'category_name'    => $this->normalize_scalar( $category_name ),
 				'date'             => $datetime_info['date'],
 				'date_label'       => $datetime_info['date_label'],
 				'time'             => $datetime_info['time'],
@@ -327,8 +304,8 @@ if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 				'away_team_id'     => $this->normalize_id_value( $away_team_id ),
 				'home_club_id'     => $home_club_id,
 				'away_club_id'     => $away_club_id,
-				'home_logo_url'    => '',
-				'away_logo_url'    => '',
+				'home_logo_url'    => esc_url_raw( $home_logo_url ),
+				'away_logo_url'    => esc_url_raw( $away_logo_url ),
 				'is_home_match'    => $is_home_match,
 				'raw'              => $row,
 			);
@@ -445,8 +422,7 @@ if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 			$date_raw     = $this->extract_first_non_empty( $row, $date_candidates );
 			$time_raw     = $this->extract_first_non_empty( $row, $time_candidates );
 			$datetime_raw = $this->extract_first_non_empty( $row, $datetime_candidates );
-
-			$timestamp = false;
+			$timestamp    = false;
 
 			if ( ! empty( $datetime_raw ) ) {
 				$timestamp = strtotime( $datetime_raw );
