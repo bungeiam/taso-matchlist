@@ -38,11 +38,31 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		const SETTINGS_SECTION = 'taso_matchlist_main_section';
 
 		/**
-		 * Constructor.
+		 * Test action.
+		 *
+		 * @var string
 		 */
-		public function __construct() {
+		const TEST_ACTION = 'taso_matchlist_test_api_connection';
+
+		/**
+		 * API client instance.
+		 *
+		 * @var Taso_Matchlist_API
+		 */
+		private $api;
+
+		/**
+		 * Constructor.
+		 *
+		 * @param Taso_Matchlist_API $api API client.
+		 */
+		public function __construct( $api ) {
+			$this->api = $api;
+
 			add_action( 'admin_menu', array( $this, 'register_menu' ) );
 			add_action( 'admin_init', array( $this, 'register_settings' ) );
+			add_action( 'admin_post_' . self::TEST_ACTION, array( $this, 'handle_test_connection' ) );
+			add_action( 'admin_notices', array( $this, 'render_admin_notice' ) );
 		}
 
 		/**
@@ -311,6 +331,76 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		}
 
 		/**
+		 * Handle API connection test.
+		 *
+		 * @return void
+		 */
+		public function handle_test_connection() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Sinulla ei ole oikeutta tähän toimintoon.', 'taso-matchlist' ) );
+			}
+
+			check_admin_referer( 'taso_matchlist_test_connection' );
+
+			$result = $this->api->test_connection();
+
+			if ( is_wp_error( $result ) ) {
+				$message = $result->get_error_message();
+				$status  = 'error';
+			} else {
+				$message = sprintf(
+					/* translators: %d: number of returned matches */
+					__( 'API-yhteys onnistui. Vastauksesta löytyi %d ottelua valitulla aikavälillä.', 'taso-matchlist' ),
+					(int) $result['match_count']
+				);
+				$status = 'success';
+			}
+
+			$redirect_url = add_query_arg(
+				array(
+					'page'                => self::MENU_SLUG,
+					'taso_matchlist_test' => $status,
+					'taso_matchlist_msg'  => rawurlencode( $message ),
+				),
+				admin_url( 'options-general.php' )
+			);
+
+			wp_safe_redirect( $redirect_url );
+			exit;
+		}
+
+		/**
+		 * Render admin notice after test action.
+		 *
+		 * @return void
+		 */
+		public function render_admin_notice() {
+			if ( ! isset( $_GET['page'] ) || self::MENU_SLUG !== $_GET['page'] ) {
+				return;
+			}
+
+			if ( empty( $_GET['taso_matchlist_test'] ) || empty( $_GET['taso_matchlist_msg'] ) ) {
+				return;
+			}
+
+			$status  = sanitize_key( wp_unslash( $_GET['taso_matchlist_test'] ) );
+			$message = sanitize_text_field( wp_unslash( $_GET['taso_matchlist_msg'] ) );
+
+			$class = 'notice notice-info';
+
+			if ( 'success' === $status ) {
+				$class = 'notice notice-success';
+			} elseif ( 'error' === $status ) {
+				$class = 'notice notice-error';
+			}
+			?>
+			<div class="<?php echo esc_attr( $class ); ?>">
+				<p><?php echo esc_html( $message ); ?></p>
+			</div>
+			<?php
+		}
+
+		/**
 		 * Render settings page.
 		 *
 		 * @return void
@@ -329,6 +419,17 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 					do_settings_sections( self::MENU_SLUG );
 					submit_button( __( 'Tallenna asetukset', 'taso-matchlist' ) );
 					?>
+				</form>
+
+				<hr>
+
+				<h2><?php esc_html_e( 'Yhteystesti', 'taso-matchlist' ); ?></h2>
+				<p><?php esc_html_e( 'Testaa, että API-avain, Club ID ja TASO-yhteys toimivat nykyisillä asetuksilla.', 'taso-matchlist' ); ?></p>
+
+				<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
+					<input type="hidden" name="action" value="<?php echo esc_attr( self::TEST_ACTION ); ?>">
+					<?php wp_nonce_field( 'taso_matchlist_test_connection' ); ?>
+					<?php submit_button( __( 'Testaa API-yhteys', 'taso-matchlist' ), 'secondary', 'submit', false ); ?>
 				</form>
 			</div>
 			<?php
