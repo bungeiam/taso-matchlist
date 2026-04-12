@@ -1,6 +1,6 @@
 <?php
 /**
- * Match normalization and filtering.
+ * Match normalization and grouping.
  *
  * @package Taso_Matchlist
  */
@@ -12,19 +12,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 
 	/**
-	 * Handles match data normalization.
+	 * Handles fetching, normalizing and grouping match data.
 	 */
 	class Taso_Matchlist_Matches {
 
 		/**
-		 * Cache key.
+		 * Base cache key prefix.
 		 *
 		 * @var string
 		 */
-		const CACHE_KEY = 'taso_matchlist_normalized_matches';
+		const CACHE_KEY = 'taso_matchlist_matches';
 
 		/**
-		 * API client.
+		 * API service instance.
 		 *
 		 * @var Taso_Matchlist_API
 		 */
@@ -33,7 +33,7 @@ if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param Taso_Matchlist_API $api API client.
+		 * @param Taso_Matchlist_API $api API instance.
 		 */
 		public function __construct( $api ) {
 			$this->api = $api;
@@ -308,14 +308,9 @@ if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 
 			$datetime_info = $this->extract_datetime_data( $row );
 
-			$home_club_id = $this->normalize_id_value( $home_club_id );
-			$away_club_id = $this->normalize_id_value( $away_club_id );
-
-			$is_home_match = (
-				'' !== $configured_club_id &&
-				'' !== $home_club_id &&
-				$configured_club_id === $home_club_id
-			);
+			$home_club_id  = $this->normalize_id_value( $home_club_id );
+			$away_club_id  = $this->normalize_id_value( $away_club_id );
+			$is_home_match = ( '' !== $configured_club_id && '' !== $home_club_id && $configured_club_id === $home_club_id );
 
 			return array(
 				'match_id'         => $this->normalize_scalar( $match_id ),
@@ -380,7 +375,7 @@ if ( ! class_exists( 'Taso_Matchlist_Matches' ) ) {
 		/**
 		 * Extract first non-empty field from row.
 		 *
-		 * @param array $row  Source row.
+		 * @param array $row Source row.
 		 * @param array $keys Candidate keys.
 		 * @return string
 		 */

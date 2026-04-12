@@ -1,6 +1,6 @@
 <?php
 /**
- * TASO API client.
+ * TASO API integration.
  *
  * @package Taso_Matchlist
  */
@@ -12,16 +12,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'Taso_Matchlist_API' ) ) {
 
 	/**
-	 * Handles TASO REST API requests.
+	 * Handles TASO API communication and option access.
 	 */
 	class Taso_Matchlist_API {
 
 		/**
-		 * Base API URL.
+		 * Base URL for TASO REST API.
 		 *
 		 * @var string
 		 */
-		const BASE_URL = 'https://spl.torneopal.fi/taso/rest/';
+		const BASE_URL = 'https://spl.torneopal.fi/taso/rest';
 
 		/**
 		 * Request timeout in seconds.
@@ -31,7 +31,14 @@ if ( ! class_exists( 'Taso_Matchlist_API' ) ) {
 		const TIMEOUT = 20;
 
 		/**
-		 * Get matches for configured club and date range.
+		 * Heinola venue ids used in MVP filtering.
+		 *
+		 * @var string
+		 */
+		const HEINOLA_VENUE_IDS = '2756,4990,2755';
+
+		/**
+		 * Fetch matches from TASO API.
 		 *
 		 * @return array|\WP_Error
 		 */
@@ -63,6 +70,7 @@ if ( ! class_exists( 'Taso_Matchlist_API' ) ) {
 				'api_key'     => $api_key,
 				'club_id'     => $club_id,
 				'home_away'   => 'home',
+				'venue_id'    => self::HEINOLA_VENUE_IDS,
 				'start_date'  => $today,
 				'end_date'    => $end_date,
 				'page_size'   => 200,
@@ -131,8 +139,7 @@ if ( ! class_exists( 'Taso_Matchlist_API' ) ) {
 		public function request( $endpoint, $params = array() ) {
 			$endpoint = ltrim( sanitize_text_field( $endpoint ), '/' );
 			$url      = trailingslashit( self::BASE_URL ) . $endpoint;
-
-			$url = add_query_arg( $params, $url );
+			$url      = add_query_arg( $params, $url );
 
 			$response = wp_remote_get(
 				$url,

@@ -45,6 +45,13 @@ if ( ! class_exists( 'Taso_Matchlist' ) ) {
 		private $matches = null;
 
 		/**
+		 * Frontend instance.
+		 *
+		 * @var Taso_Matchlist_Frontend|null
+		 */
+		private $frontend = null;
+
+		/**
 		 * Returns singleton instance.
 		 *
 		 * @return Taso_Matchlist
@@ -89,6 +96,7 @@ if ( ! class_exists( 'Taso_Matchlist' ) ) {
 			require_once TASO_MATCHLIST_PLUGIN_DIR . 'includes/class-taso-matchlist-api.php';
 			require_once TASO_MATCHLIST_PLUGIN_DIR . 'includes/class-taso-matchlist-matches.php';
 			require_once TASO_MATCHLIST_PLUGIN_DIR . 'includes/class-taso-matchlist-settings.php';
+			require_once TASO_MATCHLIST_PLUGIN_DIR . 'includes/class-taso-matchlist-frontend.php';
 		}
 
 		/**
@@ -130,8 +138,13 @@ if ( ! class_exists( 'Taso_Matchlist' ) ) {
 		 * @return void
 		 */
 		private function init_components() {
-			$this->api     = new Taso_Matchlist_API();
-			$this->matches = new Taso_Matchlist_Matches( $this->api );
+			if ( null !== $this->api ) {
+				return;
+			}
+
+			$this->api      = new Taso_Matchlist_API();
+			$this->matches  = new Taso_Matchlist_Matches( $this->api );
+			$this->frontend = new Taso_Matchlist_Frontend( $this->matches );
 
 			if ( is_admin() ) {
 				$this->settings = new Taso_Matchlist_Settings( $this->api, $this->matches );

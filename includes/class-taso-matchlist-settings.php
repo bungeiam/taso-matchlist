@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin settings class.
+ * Admin settings page.
  *
  * @package Taso_Matchlist
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 
 	/**
-	 * Handles admin settings.
+	 * Handles admin settings UI and tools.
 	 */
 	class Taso_Matchlist_Settings {
 
@@ -24,11 +24,11 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		const MENU_SLUG = 'taso-matchlist';
 
 		/**
-		 * Settings group.
+		 * Settings group name.
 		 *
 		 * @var string
 		 */
-		const SETTINGS_GROUP = 'taso_matchlist_settings_group';
+		const SETTINGS_GROUP = 'taso_matchlist_settings';
 
 		/**
 		 * Settings section id.
@@ -38,28 +38,35 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		const SETTINGS_SECTION = 'taso_matchlist_main_section';
 
 		/**
-		 * Test action.
+		 * Test connection admin action.
 		 *
 		 * @var string
 		 */
-		const TEST_ACTION = 'taso_matchlist_test_api_connection';
+		const TEST_ACTION = 'taso_matchlist_test_connection';
 
 		/**
-		 * Refresh action.
+		 * Refresh preview admin action.
 		 *
 		 * @var string
 		 */
-		const REFRESH_ACTION = 'taso_matchlist_refresh_matches_preview';
+		const REFRESH_ACTION = 'taso_matchlist_refresh_preview';
 
 		/**
-		 * API client instance.
+		 * Download preview JSON admin action.
+		 *
+		 * @var string
+		 */
+		const DOWNLOAD_JSON_ACTION = 'taso_matchlist_download_preview_json';
+
+		/**
+		 * API service.
 		 *
 		 * @var Taso_Matchlist_API
 		 */
 		private $api;
 
 		/**
-		 * Matches service instance.
+		 * Matches service.
 		 *
 		 * @var Taso_Matchlist_Matches
 		 */
@@ -68,8 +75,8 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param Taso_Matchlist_API     $api     API client.
-		 * @param Taso_Matchlist_Matches $matches Match service.
+		 * @param Taso_Matchlist_API     $api     API instance.
+		 * @param Taso_Matchlist_Matches $matches Matches instance.
 		 */
 		public function __construct( $api, $matches ) {
 			$this->api     = $api;
@@ -79,6 +86,7 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 			add_action( 'admin_init', array( $this, 'register_settings' ) );
 			add_action( 'admin_post_' . self::TEST_ACTION, array( $this, 'handle_test_connection' ) );
 			add_action( 'admin_post_' . self::REFRESH_ACTION, array( $this, 'handle_refresh_preview' ) );
+			add_action( 'admin_post_' . self::DOWNLOAD_JSON_ACTION, array( $this, 'handle_download_preview_json' ) );
 			add_action( 'admin_notices', array( $this, 'render_admin_notice' ) );
 		}
 
@@ -263,17 +271,8 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		public function render_api_key_field() {
 			$value = get_option( 'taso_matchlist_api_key', '' );
 			?>
-			<input
-				type="password"
-				id="taso_matchlist_api_key"
-				name="taso_matchlist_api_key"
-				value="<?php echo esc_attr( $value ); ?>"
-				class="regular-text"
-				autocomplete="off"
-			/>
-			<p class="description">
-				<?php esc_html_e( 'TASO REST API -avain. Säilyy WordPressin asetuksissa eikä näy frontendissä.', 'taso-matchlist' ); ?>
-			</p>
+			<input type="text" class="regular-text" name="taso_matchlist_api_key" value="<?php echo esc_attr( $value ); ?>" autocomplete="off" />
+			<p class="description"><?php echo esc_html__( 'Syötä TASO-palvelusta saatu API-avain.', 'taso-matchlist' ); ?></p>
 			<?php
 		}
 
@@ -285,17 +284,8 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		public function render_club_id_field() {
 			$value = get_option( 'taso_matchlist_club_id', '' );
 			?>
-			<input
-				type="text"
-				id="taso_matchlist_club_id"
-				name="taso_matchlist_club_id"
-				value="<?php echo esc_attr( $value ); ?>"
-				class="regular-text"
-				inputmode="numeric"
-			/>
-			<p class="description">
-				<?php esc_html_e( 'Seuran club_id, esimerkiksi Union Plaani = 3335.', 'taso-matchlist' ); ?>
-			</p>
+			<input type="text" class="regular-text" name="taso_matchlist_club_id" value="<?php echo esc_attr( $value ); ?>" inputmode="numeric" />
+			<p class="description"><?php echo esc_html__( 'Esimerkiksi Union Plaanin club_id.', 'taso-matchlist' ); ?></p>
 			<?php
 		}
 
@@ -305,21 +295,10 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		 * @return void
 		 */
 		public function render_days_ahead_field() {
-			$value = absint( get_option( 'taso_matchlist_days_ahead', 90 ) );
+			$value = get_option( 'taso_matchlist_days_ahead', 90 );
 			?>
-			<input
-				type="number"
-				id="taso_matchlist_days_ahead"
-				name="taso_matchlist_days_ahead"
-				value="<?php echo esc_attr( $value ); ?>"
-				class="small-text"
-				min="1"
-				max="365"
-				step="1"
-			/>
-			<p class="description">
-				<?php esc_html_e( 'Kuinka monta päivää eteenpäin otteluita haetaan. Oletus 90.', 'taso-matchlist' ); ?>
-			</p>
+			<input type="number" class="small-text" name="taso_matchlist_days_ahead" value="<?php echo esc_attr( (string) absint( $value ) ); ?>" min="1" max="365" step="1" />
+			<p class="description"><?php echo esc_html__( 'Kuinka monta päivää eteenpäin otteluita haetaan.', 'taso-matchlist' ); ?></p>
 			<?php
 		}
 
@@ -329,26 +308,15 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		 * @return void
 		 */
 		public function render_cache_minutes_field() {
-			$value = absint( get_option( 'taso_matchlist_cache_minutes', 30 ) );
+			$value = get_option( 'taso_matchlist_cache_minutes', 30 );
 			?>
-			<input
-				type="number"
-				id="taso_matchlist_cache_minutes"
-				name="taso_matchlist_cache_minutes"
-				value="<?php echo esc_attr( $value ); ?>"
-				class="small-text"
-				min="1"
-				max="1440"
-				step="1"
-			/>
-			<p class="description">
-				<?php esc_html_e( 'Kuinka kauan normalisoitu otteludata pidetään välimuistissa. Oletus 30 minuuttia.', 'taso-matchlist' ); ?>
-			</p>
+			<input type="number" class="small-text" name="taso_matchlist_cache_minutes" value="<?php echo esc_attr( (string) absint( $value ) ); ?>" min="1" max="1440" step="1" />
+			<p class="description"><?php echo esc_html__( 'Kuinka kauan otteludata säilytetään välimuistissa.', 'taso-matchlist' ); ?></p>
 			<?php
 		}
 
 		/**
-		 * Handle API connection test.
+		 * Handle test connection action.
 		 *
 		 * @return void
 		 */
@@ -437,6 +405,45 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		}
 
 		/**
+		 * Download normalized preview data as JSON.
+		 *
+		 * @return void
+		 */
+		public function handle_download_preview_json() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Sinulla ei ole oikeutta tähän toimintoon.', 'taso-matchlist' ) );
+			}
+
+			check_admin_referer( 'taso_matchlist_download_preview_json' );
+
+			$result = $this->matches->get_home_matches();
+
+			if ( is_wp_error( $result ) ) {
+				wp_die( esc_html( $result->get_error_message() ) );
+			}
+
+			$json = wp_json_encode(
+				$result,
+				JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+			);
+
+			if ( false === $json ) {
+				wp_die( esc_html__( 'JSON-datan muodostaminen epäonnistui.', 'taso-matchlist' ) );
+			}
+
+			$filename = 'taso-matchlist-preview-' . gmdate( 'Y-m-d-His' ) . '.json';
+
+			nocache_headers();
+			header( 'Content-Description: File Transfer' );
+			header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
+			header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+			header( 'Content-Length: ' . strlen( $json ) );
+
+			echo $json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			exit;
+		}
+
+		/**
 		 * Render admin notice after actions.
 		 *
 		 * @return void
@@ -452,14 +459,14 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 
 			$status  = sanitize_key( wp_unslash( $_GET['taso_matchlist_test'] ) );
 			$message = sanitize_text_field( wp_unslash( $_GET['taso_matchlist_msg'] ) );
-
-			$class = 'notice notice-info';
+			$class   = 'notice notice-info';
 
 			if ( 'success' === $status ) {
 				$class = 'notice notice-success';
 			} elseif ( 'error' === $status ) {
 				$class = 'notice notice-error';
 			}
+
 			?>
 			<div class="<?php echo esc_attr( $class ); ?>">
 				<p><?php echo esc_html( $message ); ?></p>
@@ -474,30 +481,47 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 		 */
 		private function render_preview_section() {
 			$result = $this->matches->get_home_matches();
+			?>
+			<hr />
 
-			echo '<hr>';
-			echo '<h2>' . esc_html__( 'Normalisoidun datan esikatselu', 'taso-matchlist' ) . '</h2>';
-			echo '<p>' . esc_html__( 'Tässä näkyy backendissä normalisoitu ja kotipeleihin suodatettu data ennen frontend-renderöintiä.', 'taso-matchlist' ) . '</p>';
+			<h2><?php echo esc_html__( 'Normalisoidun datan esikatselu', 'taso-matchlist' ); ?></h2>
 
-			echo '<form action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" method="post" style="margin-bottom: 16px;">';
-			echo '<input type="hidden" name="action" value="' . esc_attr( self::REFRESH_ACTION ) . '">';
-			wp_nonce_field( 'taso_matchlist_refresh_preview' );
-			submit_button( __( 'Päivitä otteludata nyt', 'taso-matchlist' ), 'secondary', 'submit', false );
-			echo '</form>';
+			<p><?php echo esc_html__( 'Tässä näkyy backendissä normalisoitu ja kotipeleihin suodatettu data ennen frontend-renderöintiä.', 'taso-matchlist' ); ?></p>
 
-			if ( is_wp_error( $result ) ) {
-				echo '<div class="notice notice-error inline"><p>' . esc_html( $result->get_error_message() ) . '</p></div>';
+			<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 16px;">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:0;">
+					<input type="hidden" name="action" value="<?php echo esc_attr( self::REFRESH_ACTION ); ?>" />
+					<?php wp_nonce_field( 'taso_matchlist_refresh_preview' ); ?>
+					<?php submit_button( __( 'Päivitä otteludata nyt', 'taso-matchlist' ), 'secondary', 'submit', false ); ?>
+				</form>
+
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin:0;">
+					<input type="hidden" name="action" value="<?php echo esc_attr( self::DOWNLOAD_JSON_ACTION ); ?>" />
+					<?php wp_nonce_field( 'taso_matchlist_download_preview_json' ); ?>
+					<?php submit_button( __( 'Lataa JSON-tiedosto', 'taso-matchlist' ), 'secondary', 'submit', false ); ?>
+				</form>
+			</div>
+
+			<?php if ( is_wp_error( $result ) ) : ?>
+				<div class="notice notice-error inline">
+					<p><?php echo esc_html( $result->get_error_message() ); ?></p>
+				</div>
+				<?php
 				return;
-			}
+			endif;
+			?>
 
-			if ( empty( $result ) ) {
-				echo '<p>' . esc_html__( 'Ei kotipelejä näytettäväksi tällä hetkellä.', 'taso-matchlist' ) . '</p>';
+			<?php if ( empty( $result ) ) : ?>
+				<div class="notice notice-info inline">
+					<p><?php echo esc_html__( 'Ei kotipelejä näytettäväksi tällä hetkellä.', 'taso-matchlist' ); ?></p>
+				</div>
+				<?php
 				return;
-			}
+			endif;
+			?>
 
-			echo '<pre style="max-height: 500px; overflow:auto; background:#fff; border:1px solid #ccd0d4; padding:16px;">';
-			echo esc_html( wp_json_encode( $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) );
-			echo '</pre>';
+			<pre style="max-height:600px;overflow:auto;background:#fff;border:1px solid #ccd0d4;padding:16px;"><?php echo esc_html( wp_json_encode( $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ); ?></pre>
+			<?php
 		}
 
 		/**
@@ -511,9 +535,9 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 			}
 			?>
 			<div class="wrap">
-				<h1><?php esc_html_e( 'Taso Matchlist', 'taso-matchlist' ); ?></h1>
+				<h1><?php echo esc_html__( 'Taso Matchlist', 'taso-matchlist' ); ?></h1>
 
-				<form action="options.php" method="post">
+				<form method="post" action="options.php">
 					<?php
 					settings_fields( self::SETTINGS_GROUP );
 					do_settings_sections( self::MENU_SLUG );
@@ -521,13 +545,14 @@ if ( ! class_exists( 'Taso_Matchlist_Settings' ) ) {
 					?>
 				</form>
 
-				<hr>
+				<hr />
 
-				<h2><?php esc_html_e( 'Yhteystesti', 'taso-matchlist' ); ?></h2>
-				<p><?php esc_html_e( 'Testaa, että API-avain, club_id ja TASO-yhteys toimivat nykyisillä asetuksilla.', 'taso-matchlist' ); ?></p>
+				<h2><?php echo esc_html__( 'Yhteystestin työkalut', 'taso-matchlist' ); ?></h2>
 
-				<form action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" method="post">
-					<input type="hidden" name="action" value="<?php echo esc_attr( self::TEST_ACTION ); ?>">
+				<p><?php echo esc_html__( 'Voit testata TASO API -yhteyden tai päivittää otteludatan esikatselun tästä.', 'taso-matchlist' ); ?></p>
+
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<input type="hidden" name="action" value="<?php echo esc_attr( self::TEST_ACTION ); ?>" />
 					<?php wp_nonce_field( 'taso_matchlist_test_connection' ); ?>
 					<?php submit_button( __( 'Testaa API-yhteys', 'taso-matchlist' ), 'secondary', 'submit', false ); ?>
 				</form>

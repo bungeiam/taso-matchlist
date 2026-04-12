@@ -3,7 +3,7 @@
  * Plugin Name:       Taso Matchlist
  * Plugin URI:        https://github.com/bungeiam/taso-matchlist
  * Description:       Hakee TASO REST API:sta Union Plaanin otteluita ja näyttää ne WordPress-sivulla.
- * Version:           0.1.0
+ * Version:           0.2.0
  * Author:            Joona
  * Author URI:        https://github.com/bungeiam
  * Text Domain:       taso-matchlist
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TASO_MATCHLIST_VERSION', '0.1.0' );
+define( 'TASO_MATCHLIST_VERSION', '0.2.0' );
 define( 'TASO_MATCHLIST_PLUGIN_FILE', __FILE__ );
 define( 'TASO_MATCHLIST_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TASO_MATCHLIST_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
