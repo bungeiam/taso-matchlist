@@ -32,73 +32,118 @@ if ( ! function_exists( 'taso_matchlist_pick_value' ) ) {
 	}
 }
 
-if ( ! function_exists( 'taso_matchlist_format_date_label' ) ) {
+if ( ! function_exists( 'taso_matchlist_format_raw_date' ) ) {
 	/**
-	 * Format date label from Y-m-d if needed.
+	 * Format raw date Y-m-d => d.m.Y
 	 *
-	 * @param string $date_raw Raw date.
+	 * @param string $date_raw Raw date string.
 	 * @return string
 	 */
-	function taso_matchlist_format_date_label( $date_raw ) {
+	function taso_matchlist_format_raw_date( $date_raw ) {
 		$date_raw = trim( (string) $date_raw );
 
 		if ( '' === $date_raw ) {
 			return '';
 		}
 
-		$timestamp = strtotime( $date_raw );
-		if ( false === $timestamp ) {
-			return $date_raw;
+		$dt = DateTime::createFromFormat( 'Y-m-d', $date_raw );
+		if ( false === $dt ) {
+			$timestamp = strtotime( $date_raw );
+			if ( false === $timestamp ) {
+				return $date_raw;
+			}
+
+			return wp_date( 'd.m.Y', $timestamp );
 		}
 
-		return gmdate( 'j.n.', $timestamp );
+		return $dt->format( 'd.m.Y' );
+	}
+}
+
+if ( ! function_exists( 'taso_matchlist_format_raw_time' ) ) {
+	/**
+	 * Format raw time H:i:s => H:i
+	 *
+	 * @param string $time_raw Raw time string.
+	 * @return string
+	 */
+	function taso_matchlist_format_raw_time( $time_raw ) {
+		$time_raw = trim( (string) $time_raw );
+
+		if ( '' === $time_raw ) {
+			return '';
+		}
+
+		$dt = DateTime::createFromFormat( 'H:i:s', $time_raw );
+		if ( false !== $dt ) {
+			return $dt->format( 'H:i' );
+		}
+
+		$dt = DateTime::createFromFormat( 'H:i', $time_raw );
+		if ( false !== $dt ) {
+			return $dt->format( 'H:i' );
+		}
+
+		return $time_raw;
 	}
 }
 
 if ( ! function_exists( 'taso_matchlist_get_group_date_label' ) ) {
 	/**
-	 * Resolve group date label safely.
+	 * Resolve visible date label from first match raw.date.
 	 *
 	 * @param array $group Group data.
 	 * @return string
 	 */
 	function taso_matchlist_get_group_date_label( $group ) {
-		$date_label = taso_matchlist_pick_value(
-			$group,
-			array( 'date_label', 'label' )
-		);
-
-		if ( '' !== $date_label ) {
-			return $date_label;
+		if ( ! isset( $group['matches'] ) || ! is_array( $group['matches'] ) || empty( $group['matches'] ) ) {
+			return '';
 		}
 
-		$date_raw = taso_matchlist_pick_value(
-			$group,
-			array( 'date' )
-		);
+		$first_match = reset( $group['matches'] );
 
-		if ( '' !== $date_raw ) {
-			return taso_matchlist_format_date_label( $date_raw );
+		if ( ! is_array( $first_match ) ) {
+			return '';
 		}
 
-		if ( isset( $group['matches'] ) && is_array( $group['matches'] ) && ! empty( $group['matches'][0] ) && is_array( $group['matches'][0] ) ) {
-			$match_date_label = taso_matchlist_pick_value(
-				$group['matches'][0],
-				array( 'date_label' )
-			);
-
-			if ( '' !== $match_date_label ) {
-				return $match_date_label;
+		if ( isset( $first_match['raw'] ) && is_array( $first_match['raw'] ) ) {
+			$raw_date = taso_matchlist_pick_value( $first_match['raw'], array( 'date' ) );
+			if ( '' !== $raw_date ) {
+				return taso_matchlist_format_raw_date( $raw_date );
 			}
+		}
 
-			$match_date_raw = taso_matchlist_pick_value(
-				$group['matches'][0],
-				array( 'date' )
-			);
+		$fallback_date = taso_matchlist_pick_value( $first_match, array( 'date' ) );
+		if ( '' !== $fallback_date ) {
+			return taso_matchlist_format_raw_date( $fallback_date );
+		}
 
-			if ( '' !== $match_date_raw ) {
-				return taso_matchlist_format_date_label( $match_date_raw );
+		return '';
+	}
+}
+
+if ( ! function_exists( 'taso_matchlist_get_match_time' ) ) {
+	/**
+	 * Resolve visible time from raw.time.
+	 *
+	 * @param array $match Match data.
+	 * @return string
+	 */
+	function taso_matchlist_get_match_time( $match ) {
+		if ( isset( $match['raw'] ) && is_array( $match['raw'] ) ) {
+			$raw_time = taso_matchlist_pick_value( $match['raw'], array( 'time' ) );
+			if ( '' !== $raw_time ) {
+				return taso_matchlist_format_raw_time( $raw_time );
 			}
+		}
+
+		$fallback_time = taso_matchlist_pick_value(
+			$match,
+			array( 'time', 'match_time', 'kickoff_time' )
+		);
+
+		if ( '' !== $fallback_time ) {
+			return taso_matchlist_format_raw_time( $fallback_time );
 		}
 
 		return '';
@@ -179,10 +224,7 @@ if ( ! function_exists( 'taso_matchlist_status_class' ) ) {
 						<div class="taso-matchlist__items">
 							<?php foreach ( $matches as $match ) : ?>
 								<?php
-								$time = taso_matchlist_pick_value(
-									$match,
-									array( 'time', 'match_time', 'kickoff_time' )
-								);
+								$time = taso_matchlist_get_match_time( $match );
 
 								$series_name = taso_matchlist_pick_value(
 									$match,
@@ -231,12 +273,10 @@ if ( ! function_exists( 'taso_matchlist_status_class' ) ) {
 								$home_logo = taso_matchlist_pick_value(
 									$match,
 									array(
-										'club_A_crest',
-										'club_a_crest',
+										'home_logo_url',
 										'home_team_logo',
 										'home_team_logo_url',
 										'home_logo',
-										'home_logo_url',
 										'home_team_crest',
 									)
 								);
@@ -244,12 +284,10 @@ if ( ! function_exists( 'taso_matchlist_status_class' ) ) {
 								$away_logo = taso_matchlist_pick_value(
 									$match,
 									array(
-										'club_B_crest',
-										'club_b_crest',
+										'away_logo_url',
 										'away_team_logo',
 										'away_team_logo_url',
 										'away_logo',
-										'away_logo_url',
 										'away_team_crest',
 									)
 								);
