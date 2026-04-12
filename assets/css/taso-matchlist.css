@@ -210,6 +210,48 @@
 	color: #b42318;
 }
 
+.taso-matchlist .taso-matchlist__group-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.72rem 1rem;
+	background: linear-gradient(135deg, #003b91, #0047ab);
+	color: #ffffff;
+}
+
+.taso-matchlist .taso-matchlist__group-title {
+	display: block !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	color: #ffffff !important;
+	font-size: 1.7rem !important;
+	font-weight: 800 !important;
+	line-height: 1 !important;
+	letter-spacing: -0.02em !important;
+	text-transform: none !important;
+	text-indent: 0 !important;
+	opacity: 1 !important;
+	visibility: visible !important;
+	-webkit-text-fill-color: #ffffff !important;
+	font-family: inherit !important;
+	text-shadow: none !important;
+}
+
+.taso-matchlist .taso-matchlist__group-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.9rem;
+	height: 1.9rem;
+	padding: 0 0.45rem;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.18);
+	color: #ffffff;
+	font-size: 0.92rem;
+	font-weight: 800;
+}
+
 @media (max-width: 980px) {
 	.taso-matchlist__item {
 		grid-template-columns: 190px minmax(0, 1fr);
