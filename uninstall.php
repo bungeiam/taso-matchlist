@@ -11,9 +11,11 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 /*
  * Tässä vaiheessa ei poisteta automaattisesti asetuksia tai transienteja,
- * koska lisäosa on vasta alkuvaiheessa.
+ * koska lisäosa on vielä kehitysvaiheessa.
  *
- * Myöhemmässä vaiheessa voidaan päättää erikseen:
- * - poistetaanko kaikki asetukset uninstallissa
- * - vai jätetäänkö ne talteen mahdollista uudelleenasennusta varten
+ * Myöhemmin voidaan päättää, poistetaanko esimerkiksi:
+ * - taso_matchlist_api_key
+ * - taso_matchlist_club_id
+ * - taso_matchlist_days_ahead
+ * - taso_matchlist_cache_minutes
  */

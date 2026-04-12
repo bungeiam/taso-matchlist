@@ -24,6 +24,13 @@ if ( ! class_exists( 'Taso_Matchlist' ) ) {
 		private static $instance = null;
 
 		/**
+		 * Settings instance.
+		 *
+		 * @var Taso_Matchlist_Settings|null
+		 */
+		private $settings = null;
+
+		/**
 		 * Returns singleton instance.
 		 *
 		 * @return Taso_Matchlist
@@ -40,6 +47,7 @@ if ( ! class_exists( 'Taso_Matchlist' ) ) {
 		 * Constructor.
 		 */
 		private function __construct() {
+			$this->includes();
 			$this->setup_hooks();
 		}
 
@@ -50,9 +58,21 @@ if ( ! class_exists( 'Taso_Matchlist' ) ) {
 
 		/**
 		 * Prevent unserializing.
+		 *
+		 * @throws Exception If someone tries to unserialize the singleton.
+		 * @return void
 		 */
 		public function __wakeup() {
 			throw new Exception( 'Cannot unserialize singleton.' );
+		}
+
+		/**
+		 * Load required files.
+		 *
+		 * @return void
+		 */
+		private function includes() {
+			require_once TASO_MATCHLIST_PLUGIN_DIR . 'includes/class-taso-matchlist-settings.php';
 		}
 
 		/**
@@ -85,6 +105,18 @@ if ( ! class_exists( 'Taso_Matchlist' ) ) {
 		 */
 		public function init() {
 			$this->maybe_upgrade();
+			$this->init_components();
+		}
+
+		/**
+		 * Initialize plugin components.
+		 *
+		 * @return void
+		 */
+		private function init_components() {
+			if ( is_admin() ) {
+				$this->settings = new Taso_Matchlist_Settings();
+			}
 		}
 
 		/**

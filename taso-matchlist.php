@@ -44,5 +44,21 @@ function taso_matchlist_activate() {
 	if ( get_option( 'taso_matchlist_version' ) !== TASO_MATCHLIST_VERSION ) {
 		update_option( 'taso_matchlist_version', TASO_MATCHLIST_VERSION );
 	}
+
+	if ( false === get_option( 'taso_matchlist_api_key', false ) ) {
+		add_option( 'taso_matchlist_api_key', '' );
+	}
+
+	if ( false === get_option( 'taso_matchlist_club_id', false ) ) {
+		add_option( 'taso_matchlist_club_id', '' );
+	}
+
+	if ( false === get_option( 'taso_matchlist_days_ahead', false ) ) {
+		add_option( 'taso_matchlist_days_ahead', 90 );
+	}
+
+	if ( false === get_option( 'taso_matchlist_cache_minutes', false ) ) {
+		add_option( 'taso_matchlist_cache_minutes', 30 );
+	}
 }
 register_activation_hook( __FILE__, 'taso_matchlist_activate' );

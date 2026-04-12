@@ -15,15 +15,23 @@ Hakee TASO REST API:sta Union Plaanin otteluita ja näyttää ne WordPress-sivul
 Taso Matchlist on WordPress-lisäosa, jonka tarkoitus on hakea otteludataa TASO REST API:sta
 ja näyttää se sivustolla siistinä ottelulistana.
 
-Tämän ensimmäisen version tarkoitus on luoda lisäosan turvallinen ja siisti perusrunko.
+Tässä vaiheessa lisäosaan on toteutettu:
+- perusrunko
+- asetussivu
+- API-avaimen tallennus
+- club_id-asetus
+- haettavien päivien asetus
+- cache-ajan asetus
 
 == Installation ==
 
 1. Lataa lisäosa WordPressin plugin-kansioon.
 2. Aktivoi lisäosa hallintapaneelista.
-3. Jatka seuraaviin kehitysvaiheisiin asetusten ja API-haun lisäämiseksi.
+3. Avaa Asetukset > Taso Matchlist.
+4. Tallenna API-avain ja muut asetukset.
 
 == Changelog ==
 
 = 0.1.0 =
 * Ensimmäinen perusrunko lisäosalle.
+* Admin-asetussivu lisätty.
