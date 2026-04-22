@@ -188,6 +188,29 @@ if ( ! function_exists( 'taso_matchlist_status_class' ) ) {
 		return sanitize_html_class( $status );
 	}
 }
+
+if ( ! function_exists( 'taso_matchlist_get_match_link' ) ) {
+	/**
+	 * Build Palloliitto match link from match_id.
+	 *
+	 * @param array $match Match data.
+	 * @return string
+	 */
+	function taso_matchlist_get_match_link( $match ) {
+		$match_id = taso_matchlist_pick_value(
+			$match,
+			array( 'match_id', 'id', 'game_id' )
+		);
+
+		$match_id = preg_replace( '/[^0-9]/', '', $match_id );
+
+		if ( empty( $match_id ) ) {
+			return '';
+		}
+
+		return 'https://tulospalvelu.palloliitto.fi/match/' . rawurlencode( $match_id ) . '/lineups';
+	}
+}
 ?>
 <div class="taso-matchlist" aria-live="polite">
 	<div class="taso-matchlist__inner">
@@ -292,9 +315,29 @@ if ( ! function_exists( 'taso_matchlist_status_class' ) ) {
 									)
 								);
 
+								$match_link  = taso_matchlist_get_match_link( $match );
 								$show_status = taso_matchlist_should_show_status( $status );
+								$item_label  = sprintf(
+									/* translators: 1: home team, 2: away team, 3: time */
+									__( 'Avaa ottelun %1$s – %2$s kokoonpanot. Otteluaika %3$s.', 'taso-matchlist' ),
+									$home_team_name ? $home_team_name : __( 'Kotijoukkue', 'taso-matchlist' ),
+									$away_team_name ? $away_team_name : __( 'Vierasjoukkue', 'taso-matchlist' ),
+									$time ? $time : '--:--'
+								);
 								?>
-								<article class="taso-matchlist__item">
+
+								<?php if ( $match_link ) : ?>
+									<a
+										class="taso-matchlist__item taso-matchlist__item--link"
+										href="<?php echo esc_url( $match_link ); ?>"
+										target="_blank"
+										rel="noopener noreferrer"
+										aria-label="<?php echo esc_attr( $item_label ); ?>"
+									>
+								<?php else : ?>
+									<article class="taso-matchlist__item">
+								<?php endif; ?>
+
 									<div class="taso-matchlist__series-col">
 										<?php if ( $series_name ) : ?>
 											<div class="taso-matchlist__series">
@@ -354,7 +397,12 @@ if ( ! function_exists( 'taso_matchlist_status_class' ) ) {
 											</span>
 										</div>
 									</div>
-								</article>
+
+								<?php if ( $match_link ) : ?>
+									</a>
+								<?php else : ?>
+									</article>
+								<?php endif; ?>
 							<?php endforeach; ?>
 						</div>
 					</section>

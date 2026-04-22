@@ -8,6 +8,7 @@
 	--tml-blue-dark: #011a44;
 	--tml-blue-soft: #eaf1ff;
 	--tml-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+	--tml-shadow-hover: 0 10px 24px rgba(15, 23, 42, 0.12);
 	margin: 1rem 0;
 	color: var(--tml-text);
 	font-size: 16px;
@@ -23,7 +24,7 @@
 .taso-matchlist__inner {
 	background: var(--tml-bg);
 	border: 1px solid var(--tml-border);
-	border-radius: 14px;
+	border-radius: 3px;
 	overflow: hidden;
 	box-shadow: var(--tml-shadow);
 }
@@ -55,7 +56,7 @@
 .taso-matchlist .taso-matchlist__group-header .taso-matchlist__group-title {
 	display: flex;
 	align-items: center;
-	margin: 0 !important; 
+	margin: 0 !important;
 	padding: 0;
 	color: #ffffff;
 	font-size: 1.3rem;
@@ -99,10 +100,40 @@
 	padding: 1rem 1.1rem;
 	background: var(--tml-row);
 	border-top: 1px solid var(--tml-border);
+	color: inherit;
+	text-decoration: none;
 }
 
 .taso-matchlist__item:first-child {
 	border-top: 0;
+}
+
+.taso-matchlist__item--link {
+	cursor: pointer;
+	transition:
+		background-color 0.18s ease,
+		box-shadow 0.18s ease,
+		transform 0.18s ease;
+	-webkit-tap-highlight-color: rgba(3, 50, 122, 0.12);
+}
+
+.taso-matchlist__item--link:hover,
+.taso-matchlist__item--link:focus-visible {
+	background: #eaf1ff;
+	box-shadow: var(--tml-shadow-hover);
+	text-decoration: none;
+	color: inherit;
+}
+
+.taso-matchlist__item--link:active {
+	transform: scale(0.995);
+}
+
+.taso-matchlist__item--link:focus-visible {
+	outline: 2px solid var(--tml-blue);
+	outline-offset: -2px;
+	position: relative;
+	z-index: 1;
 }
 
 .taso-matchlist__series-col {
@@ -243,7 +274,7 @@
 
 	.taso-matchlist .taso-matchlist__group-header .taso-matchlist__group-title {
 		font-size: 1.2rem;
-        margin: 0 !important; 
+		margin: 0 !important;
 	}
 
 	.taso-matchlist__group-count {
@@ -268,12 +299,12 @@
 
 	.taso-matchlist__series {
 		font-size: 0.95rem;
-        text-align: center;
+		text-align: center;
 	}
 
 	.taso-matchlist__location {
 		font-size: 0.85rem;
-        text-align: center;
+		text-align: center;
 	}
 
 	.taso-matchlist__center-col {
